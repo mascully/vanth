@@ -1,0 +1,7 @@
+[package]
+name = "vanth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+whirlwind = "0.1.1"
