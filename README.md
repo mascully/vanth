@@ -143,6 +143,16 @@ let
 An empty object, `{}`, acts as the unit type for Vanth. When a function returns no value and is only used for its side-effects, its return type is `{}`. This is equivalent to `()` in Rust.
 
 
+### Overrides
+
+An object can be dereferenced with `.{ /* ... */ }` to create a new object with fields inherited from another object, with some of them possible changed. This is like an overlay in Nix.
+
+```va
+let x = { .inner = { .a = 6; .b = 8; .sum = $.a + $.b }; };
+let y = x.inner.{ .b = 10; }.sum; // y is now `16`
+```
+
+
 ### Variables
 
 Variables are declared using the `let` keyword.
@@ -546,6 +556,6 @@ The `@doc` annotation is used to provide documentation for values and types.
 Strings inside it, e.g. `@doc("this function fixes things")` can use interpolation, `@doc("example usage: {foo(5, 6)}")`. Specifically for strings in `@doc`, these expressions are not expanded but rather printed verbatim. The interpreter still checks that they evaluate successfully, otherwise the docs fail to compile.
 
 
-# Licenses
+## Licenses
 
 Modules have a `Module.license: String` property, as well as a `Module.allowLicenses` and `Module.denyLicenses` property. I don't know what the types of these properties will be yet. Modules will only build successfully if the license of every one of their dependencies recursively satisfies the specified license requirements.
