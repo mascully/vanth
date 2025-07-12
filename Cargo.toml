@@ -1,7 +1,6 @@
-[package]
-name = "vanth"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["vanth"]
 
-[dependencies]
-whirlwind = "0.1.1"
+[workspace.dependencies]
+bevy_app = "0.16.1"
+bevy_ecs = "0.16.1"
