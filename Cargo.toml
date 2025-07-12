@@ -1,5 +1,5 @@
 [workspace]
-members = ["vanth"]
+members = ["crates/*"]
 
 [workspace.dependencies]
 bevy_app = "0.16.1"
