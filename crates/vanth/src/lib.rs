@@ -16,7 +16,8 @@ impl Node {
 
     /// Returns the number of entities currently in the world.
     pub fn entity_count(&self) -> usize {
+        todo!()
         // Query for no components returns one item per entity.
-        self.app.world().entities().len()
+        // self.app.world().entities().len()
     }
 }
