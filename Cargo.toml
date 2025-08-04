@@ -7,6 +7,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+clap = { version = "4.5.42", features = ["derive"] }
 bevy_app = "0.16.1"
 bevy_ecs = "0.16.1"
 bitcode = "0.6.6"

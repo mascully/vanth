@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 /// Library crate for the `vanth` ECS-based database node.
 use bevy_app::{App, Plugin};
 use bevy_ecs::{prelude::*, query::QueryData};
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::entity::EntityId;
 
@@ -54,16 +54,25 @@ impl Node {
     }
 }
 
-#[derive(Debug, Deserialize, Component, Serialize)]
-pub struct Vanth<T: VanthTuple + QueryData> {
-    id: crate::entity::Id<Self>,
-    _marker: PhantomData<T>,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct HashedValue {
+    content_hash: ContentHash,
+    inner: Value
 }
 
-impl <T: VanthTuple + QueryData> Vanth<T> {
-    fn save_system(query: Query<T>) {
-        
-    }
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Value {
+    ty: Ty,
+    data: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Ty {
+    path: Vec<String>,
+}
+
+pub trait Vanth: Serialize + DeserializeOwned {
+    fn ty() -> Ty;
 }
 
 // TODO: Impl for different tuple sizes
