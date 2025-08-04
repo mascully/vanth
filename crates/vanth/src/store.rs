@@ -11,3 +11,20 @@ pub struct Store {
 impl Store {
     
 }
+
+#[derive(Debug, Deserialize, Component, Serialize)]
+pub struct Cache {
+    size_limit_bytes: u64,
+    backend: Backend,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Backend {
+    Memory,
+    Sqlite(Sqlite)
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Sqlite {
+    path: PathBuf,
+}

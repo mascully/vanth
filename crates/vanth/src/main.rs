@@ -1,6 +1,3 @@
-#![allow(unused)]
-
-mod parser;
 mod util;
 mod vanth;
 

@@ -3,6 +3,18 @@ use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 
+use crate::hash;
+use crate::hashing_serializer::{self, HashingSerializer};
+
+#[derive(Clone, Copy, Deserialize)]
+pub struct EntityId([u8; 32]);
+
+impl From<String> for EntityId {
+    fn from(value: String) -> Self {
+        Self(hash(&value).hash)
+    }
+}
+
 /// A generic identifier type that can be used for different entity types
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct Id<T: ?Sized> {

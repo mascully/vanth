@@ -1,0 +1,3 @@
+[build]
+target-dir = "target/cargo"
+rustflags = ["-A", "unused", "-W", "unused_must_use"]
