@@ -7,3 +7,8 @@ use vanth::Vanth;
 struct Foo {
     
 }
+
+#[test]
+fn test_derive() {
+    println!("yeet");
+}

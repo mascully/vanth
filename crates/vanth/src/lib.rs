@@ -60,6 +60,15 @@ pub struct HashedValue {
     inner: Value
 }
 
+impl From<Value> for HashedValue {
+    fn from(value: Value) -> Self {
+        Self {
+            content_hash: hash(&value),
+            inner: value,
+        }
+    }
+}  
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Value {
     ty: Ty,
@@ -109,7 +118,7 @@ pub struct Reference<T: Clone + Serialize> {
     _marker: PhantomData<T>
 }
 
-#[derive( Clone, Debug, Deserialize, Component, Serialize)]
+#[derive(Clone, Debug, Deserialize, Component, Serialize)]
 pub enum ReferenceValue {
     Absent,
     Retrieving(ReferenceRetrievalTask),
@@ -127,7 +136,7 @@ impl <T: Clone + Serialize> Reference<T> {
 }
 
 #[derive(Component, Clone, Debug, Deserialize, Serialize)]
-struct ReferenceRetrievalTask {
+pub struct ReferenceRetrievalTask {
     
 }
 
