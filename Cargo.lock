@@ -1009,6 +1009,7 @@ dependencies = [
  "digest",
  "serde",
  "serde_json",
+ "vanth_derive",
 ]
 
 [[package]]
@@ -1017,6 +1018,15 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "vanth",
+]
+
+[[package]]
+name = "vanth_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

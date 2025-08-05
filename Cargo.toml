@@ -15,3 +15,6 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 digest = "0.10.7"
 blake3 = { version = "1.8.2", features = ["traits-preview"] }
+quote = "1.0"
+syn = { version = "2.0", features = ["full"] }
+proc-macro2 = "1.0"

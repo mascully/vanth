@@ -13,3 +13,4 @@ digest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 blake3.workspace = true
+vanth_derive = { path = "../vanth_derive" }

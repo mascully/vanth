@@ -12,6 +12,7 @@ pub mod entity;
 pub mod hashing_serializer;
 
 pub use hashing_serializer::hash;
+pub use vanth_derive::Vanth;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -77,10 +78,22 @@ pub struct Value {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Ty {
-    path: Vec<String>,
+    pub path: Vec<String>,
 }
 
-pub trait Vanth: Serialize + DeserializeOwned {
+impl PartialEq for Ty {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+    }
+}
+
+impl <T: AsRef<str>> PartialEq<T> for Ty {
+    fn eq(&self, other: &T) -> bool {
+        self.path.join("::") == *other.as_ref()
+    }
+}
+
+pub trait Vanth {
     fn ty() -> Ty;
 }
 
