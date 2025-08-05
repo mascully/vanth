@@ -18,3 +18,6 @@ blake3 = { version = "1.8.2", features = ["traits-preview"] }
 quote = "1.0"
 syn = { version = "2.0", features = ["full"] }
 proc-macro2 = "1.0"
+sqlx = "0.8.6"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+tempfile = "3.12.0"
