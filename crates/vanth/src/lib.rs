@@ -180,3 +180,8 @@ impl Plugin for VanthPlugin {
 // fn run_reference_tasks(tasks: Query<(&ReferenceGetTask<>)>) {
 
 // }
+
+/// A world which Vanth entities live in. Lifetimes `'v` of [`Vanth<'v>`] types are tied to the lifetime of the `Root`.
+pub struct Root {
+    
+}

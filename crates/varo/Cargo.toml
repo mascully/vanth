@@ -1,0 +1,19 @@
+[package]
+name = "varo"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+digest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+blake3.workspace = true
+vanth = { path = "../vanth" }
+vanth_derive = { path = "../vanth_derive" }
+rand_core.workspace = true
+
+[dev-dependencies]
+tempfile = { workspace = true }
