@@ -14,6 +14,7 @@ blake3.workspace = true
 vanth = { path = "../vanth" }
 vanth_derive = { path = "../vanth_derive" }
 rand_core.workspace = true
+rand_chacha.workspace = true
 
 [dev-dependencies]
 tempfile = { workspace = true }
