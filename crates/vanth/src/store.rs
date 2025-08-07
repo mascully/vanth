@@ -4,6 +4,7 @@ use rusqlite::{Connection, named_params, params};
 
 use bevy_ecs::prelude::*;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use tracing::trace;
 
 use crate::{ComponentContents, ContentHash, Ty, Vanth, hash};
 
@@ -17,7 +18,8 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Deserialize, Serialize)]
 pub enum Error {
     Serializiation(String),
-    Database(String),
+    SqliteTableDoesNotExist { table_name: String },
+    SqliteUnknown(String),
 }
 
 impl From<serde_json::Error> for Error {
@@ -28,13 +30,36 @@ impl From<serde_json::Error> for Error {
 
 impl From<rusqlite::Error> for Error {
     fn from(err: rusqlite::Error) -> Self {
-        Error::Database(err.to_string())
+        if let rusqlite::Error::SqliteFailure(_, Some(ref message)) = err
+            && let Some(table_name) = message.strip_prefix("no such table: ")
+        {
+            return Error::SqliteTableDoesNotExist {
+                table_name: table_name.into(),
+            };
+        }
+        Error::SqliteUnknown(err.to_string())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct StoreParams {
+    pub create_if_not_exists: bool,
+    pub read_only: bool,
+}
+
+impl Default for StoreParams {
+    fn default() -> Self {
+        Self {
+            create_if_not_exists: true,
+            read_only: false,
+        }
     }
 }
 
 impl Store {
     /// Use an SQLite backend with a database file at the provided path.
-    pub fn from_path(path: PathBuf) -> Result<Self> {
+    // TODO: Params
+    pub fn sqlite_from_path(path: PathBuf) -> Result<Self> {
         Ok(Self {
             backend: Box::new(Sqlite::new(path)?),
         })
@@ -48,7 +73,7 @@ impl Store {
     }
 
     pub fn get_from_hash<T: Vanth + DeserializeOwned>(&mut self, content_hash: ContentHash) -> Result<Option<T>> {
-        let Some(raw) = self.get_from_hash_raw::<T>(content_hash)? else {
+        let Some(raw) = self.get_from_hash_raw(T::ty(), content_hash)? else {
             return Ok(None);
         };
 
@@ -56,8 +81,8 @@ impl Store {
         Ok(Some(deserialized))
     }
 
-    pub fn get_from_hash_raw<T: Vanth>(&mut self, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
-        self.backend.get_from_hash(T::ty(), content_hash)
+    pub fn get_from_hash_raw(&mut self, ty: Ty, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
+        self.backend.get_from_hash(ty, content_hash)
     }
 
     pub fn get_all_of_type<T: Vanth>(&mut self) -> Result<Vec<ComponentContents<T>>> {
@@ -79,8 +104,8 @@ impl Store {
         self.backend.write(T::ty(), content_hash, data)
     }
 
-    pub fn write_raw<T: Vanth>(&mut self, content_hash: ContentHash, content: Vec<u8>) -> Result<()> {
-        self.backend.write(T::ty(), content_hash, content)
+    pub fn write_raw(&mut self, ty: Ty, content_hash: ContentHash, content: Vec<u8>) -> Result<()> {
+        self.backend.write(ty, content_hash, content)
     }
 
     pub fn delete<T: Vanth>(&mut self, content_hash: ContentHash) -> Result<()> {
@@ -89,6 +114,18 @@ impl Store {
 
     pub fn delete_all<T: Vanth>(&mut self) -> Result<()> {
         self.backend.delete_all_of_ty(T::ty())
+    }
+
+    pub fn get_all_of_type_raw(&mut self, ty: Ty) -> Result<Vec<(ContentHash, Vec<u8>)>> {
+        self.backend.get_all_of_ty(ty)
+    }
+
+    pub fn delete_raw(&mut self, ty: Ty, content_hash: ContentHash) -> Result<()> {
+        self.backend.delete_by_hash(ty, content_hash)
+    }
+
+    pub fn delete_all_raw(&mut self, ty: Ty) -> Result<()> {
+        self.backend.delete_all_of_ty(ty)
     }
 }
 
@@ -113,26 +150,18 @@ pub trait Backend: std::fmt::Debug {
 /// One table per type. Keys and values are both blobs.
 #[derive(Debug)]
 pub struct Sqlite {
-    conn: Connection,
+    connection: Connection,
 }
 
 impl Sqlite {
     pub fn new(path: PathBuf) -> Result<Self> {
-        let conn = Connection::open(path)?;
-        Ok(Self { conn })
-    }
-
-    fn ensure_table_exists(&self, ty: &Ty) -> Result<()> {
-        let table_name = Self::table_name(ty);
-        let query = format!(
-            "CREATE TABLE IF NOT EXISTS \"{}\" (
-                content_hash BLOB PRIMARY KEY,
-                content BLOB NOT NULL
-            )",
-            table_name
-        );
-        self.conn.execute(&query, [])?;
-        Ok(())
+        use rusqlite::OpenFlags;
+        // Remove the `SQLITE_OPEN_CREATE` flag because we do not want to create databases if they don't exist.
+        let connection = Connection::open_with_flags(
+            path,
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )?;
+        Ok(Self { connection })
     }
 
     fn table_name(ty: &Ty) -> String {
@@ -142,12 +171,11 @@ impl Sqlite {
 
 impl Backend for Sqlite {
     fn get_from_hash(&mut self, ty: Ty, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
-        self.ensure_table_exists(&ty)?;
         let table_name = Self::table_name(&ty);
         let query = format!("SELECT content FROM \"{}\" WHERE content_hash = :hash", table_name);
 
         match self
-            .conn
+            .connection
             .query_row(&query, named_params! {":hash": content_hash.hash.as_slice()}, |row| {
                 row.get::<_, Vec<u8>>(0)
             }) {
@@ -158,12 +186,18 @@ impl Backend for Sqlite {
     }
 
     fn get_all_of_ty(&mut self, ty: Ty) -> Result<Vec<(ContentHash, Vec<u8>)>> {
-        self.ensure_table_exists(&ty)?;
+        let transaction = self.connection.transaction()?;
         let table_name = Self::table_name(&ty);
         let query = format!("SELECT content_hash, content FROM \"{}\"", table_name);
 
-        let mut stmt = self.conn.prepare(&query)?;
-        let rows = stmt.query_map([], |row| {
+        trace!("Reading table {}", table_name);
+
+        let mut statement = match transaction.prepare(&query).map_err(Into::into) {
+            Err(Error::SqliteTableDoesNotExist { .. }) => return Ok(Vec::new()),
+            other => other?,
+        };
+
+        let rows = statement.query_map([], |row| {
             let hash_bytes: Vec<u8> = row.get(0)?;
             let content: Vec<u8> = row.get(1)?;
             let mut hash_array = [0u8; 32];
@@ -175,17 +209,28 @@ impl Backend for Sqlite {
         for row in rows {
             results.push(row?);
         }
-        Ok(results)
+
+        drop(statement);
+
+        transaction.commit()?;
+        Ok(Vec::new())
     }
 
     fn write(&mut self, ty: Ty, content_hash: ContentHash, content: Vec<u8>) -> Result<()> {
-        self.ensure_table_exists(&ty)?;
         let table_name = Self::table_name(&ty);
+        let create_table_query = format!(
+            "CREATE TABLE IF NOT EXISTS \"{}\" (
+                content_hash BLOB PRIMARY KEY,
+                content BLOB NOT NULL
+            )",
+            table_name
+        );
+        self.connection.execute(&create_table_query, [])?;
         let query = format!(
             "INSERT OR REPLACE INTO \"{}\" (content_hash, content) VALUES (:hash, :content)",
             table_name
         );
-        self.conn.execute(
+        self.connection.execute(
             &query,
             named_params! {":hash": content_hash.hash.as_slice(), ":content": content},
         )?;
@@ -193,10 +238,9 @@ impl Backend for Sqlite {
     }
 
     fn delete_by_hash(&mut self, ty: Ty, content_hash: ContentHash) -> Result<()> {
-        self.ensure_table_exists(&ty)?;
         let table_name = Self::table_name(&ty);
         let query = format!("DELETE FROM \"{}\" WHERE content_hash = :hash", table_name);
-        self.conn
+        self.connection
             .execute(&query, named_params! {":hash": content_hash.hash.as_slice()})?;
         Ok(())
     }
@@ -204,7 +248,7 @@ impl Backend for Sqlite {
     fn delete_all_of_ty(&mut self, ty: Ty) -> Result<()> {
         let table_name = Self::table_name(&ty);
         let query = format!("DROP TABLE IF EXISTS \"{}\"", table_name);
-        self.conn.execute(&query, [])?;
+        self.connection.execute(&query, [])?;
         Ok(())
     }
 }

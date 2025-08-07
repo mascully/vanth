@@ -17,7 +17,7 @@ struct Bar {
 fn test_sqlite_store() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("test.db");
-    let mut store = Store::from_path(path.clone()).unwrap();
+    let mut store = Store::sqlite_from_path(path.clone()).unwrap();
 
     let foo_1 = Foo { inner: 1 };
     let foo_2 = Foo { inner: 2 };
