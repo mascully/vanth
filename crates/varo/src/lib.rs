@@ -38,11 +38,11 @@ pub fn rng_gen_f32(rng: &mut Rng) -> f32 {
 }
 
 pub fn rng_gen_gaussian(rng: &mut Rng, mean: f32, std_dev: f32) -> f32 {
-    let u = rng_gen_f32(rng);
-    let v = rng_gen_f32(rng);
-    let s = (-2.0 * (1.0 - u).ln()).sqrt();
-    let angle = 2.0 * PI * v;
-    mean + std_dev * s * angle.cos()
+    let uniform_for_radius_calc = rng_gen_f32(rng);
+    let uniform_for_angle = rng_gen_f32(rng);
+    let radius = (-2.0 * (1.0 - uniform_for_radius_calc).ln()).sqrt();
+    let theta = 2.0 * PI * uniform_for_angle;
+    mean + std_dev * radius * theta.cos()
 }
 
 pub trait Varo {
@@ -58,10 +58,12 @@ pub struct Distribution {
 
 impl Distribution {
     pub fn sample(&self, digest: &mut Rng) -> f32 {
-        if self.moments.len() >= 2 {
-            rng_gen_gaussian(digest, self.moments[0], self.moments[1].sqrt())
-        } else {
+        if self.moments.is_empty() {
             rng_gen_f32(digest)
+        } else if self.moments.len() == 1 {
+            rng_gen_gaussian(digest, self.moments[0], 1.0)
+        } else {
+            rng_gen_gaussian(digest, self.moments[0], self.moments[1].sqrt())
         }
     }
 }

@@ -49,10 +49,10 @@ impl Node {
         Ok(())
     }
     
-    pub fn load(entity_id: impl Into<EntityId>) -> Result<Option<EntityContents>> {
-        // TODO
-        Ok(None)
-    }
+    // pub fn load(entity_id: impl Into<EntityId>) -> Result<Option<EntityContents>> {
+    //     // TODO
+    //     Ok(None)
+    // }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -76,9 +76,15 @@ pub struct Value {
     data: Vec<u8>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Eq, Hash)]
 pub struct Ty {
     pub path: Vec<String>,
+}
+
+impl ToString for Ty {
+    fn to_string(&self) -> String {
+        self.path.join("::")
+    }
 }
 
 impl PartialEq for Ty {
@@ -89,7 +95,7 @@ impl PartialEq for Ty {
 
 impl <T: AsRef<str>> PartialEq<T> for Ty {
     fn eq(&self, other: &T) -> bool {
-        self.path.join("::") == *other.as_ref()
+       self.to_string() == *other.as_ref()
     }
 }
 
@@ -102,16 +108,16 @@ pub trait VanthTuple {
     
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct EntityContents {
-    components: Vec<ComponentContents>
-}
+// #[derive(Clone, Debug, Deserialize, Serialize)]
+// pub struct EntityContents {
+//     components: Vec<ComponentContents>
+// }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ComponentContents {
-    id: String,
+#[derive(Clone, Debug)]
+pub struct ComponentContents<T: Vanth> {
     content_hash: ContentHash,
     data: Vec<u8>,
+    _marker: PhantomData<T>,
 }
 
 pub trait Component: Serialize {
@@ -120,7 +126,7 @@ pub trait Component: Serialize {
 
 // use a macro to implement VanthTuiple here.
 
-#[derive(Copy, Clone, Debug, Deserialize, Component, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Component, Serialize, PartialEq, Eq, Hash)]
 pub struct ContentHash {
     pub hash: [u8; 32],
 }

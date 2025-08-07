@@ -1,6 +1,17 @@
-use vanth::store::Store;
+use serde::{Deserialize, Serialize};
+use vanth::{hash, store::Store, Vanth};
 use std::path::PathBuf;
 use tempfile::TempDir;
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Vanth)]
+struct Foo {
+    inner: i32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Vanth)]
+struct Bar {
+    inner: String,
+}
 
 #[test]
 fn test_sqlite_store() {
@@ -8,19 +19,29 @@ fn test_sqlite_store() {
     let path = dir.path().join("test.db");
     let mut store = Store::from_path(path.clone()).unwrap();
     
-    assert_eq!(store.read(b"key_1"), Ok(None));
-    assert_eq!(store.write(b"key_1", b"value_1"), Ok(()));
+    let foo_1 = Foo { inner: 1 };
+    let foo_2 = Foo { inner: 2 };
+    let bar_1 = Bar { inner: "hello".into() };
     
-    let value = store.read(b"key_1").unwrap();
-    assert_eq!(value.as_deref(), Some(b"value_1" as &[u8]));
+    assert_eq!(store.get_all_of_type::<Foo>().unwrap().len(), 0);
+    assert_eq!(store.get_all_of_type::<Bar>().unwrap().len(), 0);
     
-    drop(store);
+    store.write(&foo_1).unwrap();
+    store.write(&foo_2).unwrap();
+    store.write(&bar_1).unwrap();
+    assert_eq!(store.get_all_of_type::<Foo>().unwrap().len(), 2);
+    assert_eq!(store.get_all_of_type::<Bar>().unwrap().len(), 1);
     
-    let mut store = Store::from_path(path.clone()).unwrap();
+    let foo_2_hash = hash(&foo_2);
+    let foo_2_fetched = store.get_from_hash(foo_2_hash).unwrap().unwrap();
+    assert_ne!(foo_1, foo_2_fetched);
+    assert_eq!(foo_2, foo_2_fetched);
     
-    let value = store.read(b"key_1").unwrap();
-    assert_eq!(value.as_deref(), Some(b"value_1" as &[u8]));
+    store.delete::<Foo>(foo_2_hash).unwrap();
+    assert_eq!(store.get_all_of_type::<Foo>().unwrap().len(), 1);
     
-    store.delete(b"key_1").unwrap();
-    assert_eq!(store.read(b"key_1"), Ok(None));
+    store.delete_all::<Foo>().unwrap();
+    store.delete_all::<Bar>().unwrap();
+    assert_eq!(store.get_all_of_type::<Foo>().unwrap().len(), 0);
+    assert_eq!(store.get_all_of_type::<Bar>().unwrap().len(), 0);
 }
