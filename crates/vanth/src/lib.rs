@@ -3,13 +3,13 @@ use std::marker::PhantomData;
 /// Library crate for the `vanth` ECS-based database node.
 use bevy_app::{App, Plugin};
 use bevy_ecs::{prelude::*, query::QueryData};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::entity::EntityId;
 
-pub mod store;
 pub mod entity;
 pub mod hashing_serializer;
+pub mod store;
 
 pub use hashing_serializer::hash;
 pub use vanth_derive::Vanth;
@@ -38,17 +38,15 @@ impl Node {
         // Query for no components returns one item per entity.
         // self.app.world().entities().len()
     }
-    
+
     // TODO
-    pub fn run() {
-        
-    }
-    
+    pub fn run() {}
+
     pub fn save(entity_id: impl Into<EntityId>) -> Result<()> {
         // TODO
         Ok(())
     }
-    
+
     // pub fn load(entity_id: impl Into<EntityId>) -> Result<Option<EntityContents>> {
     //     // TODO
     //     Ok(None)
@@ -58,7 +56,7 @@ impl Node {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct HashedValue {
     content_hash: ContentHash,
-    inner: Value
+    inner: Value,
 }
 
 impl From<Value> for HashedValue {
@@ -68,7 +66,7 @@ impl From<Value> for HashedValue {
             inner: value,
         }
     }
-}  
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Value {
@@ -93,9 +91,9 @@ impl PartialEq for Ty {
     }
 }
 
-impl <T: AsRef<str>> PartialEq<T> for Ty {
+impl<T: AsRef<str>> PartialEq<T> for Ty {
     fn eq(&self, other: &T) -> bool {
-       self.to_string() == *other.as_ref()
+        self.to_string() == *other.as_ref()
     }
 }
 
@@ -104,9 +102,7 @@ pub trait Vanth {
 }
 
 // TODO: Impl for different tuple sizes
-pub trait VanthTuple {
-    
-}
+pub trait VanthTuple {}
 
 // #[derive(Clone, Debug, Deserialize, Serialize)]
 // pub struct EntityContents {
@@ -134,30 +130,28 @@ pub struct ContentHash {
 #[derive(Clone, Debug, Deserialize, Component, Serialize)]
 pub struct Reference<T: Clone + Serialize> {
     value: ReferenceValue,
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 #[derive(Clone, Debug, Deserialize, Component, Serialize)]
 pub enum ReferenceValue {
     Absent,
     Retrieving(ReferenceRetrievalTask),
-    Present(Vec<u8>)
+    Present(Vec<u8>),
 }
 
-impl <T: Clone + Serialize> Reference<T> {
+impl<T: Clone + Serialize> Reference<T> {
     pub async fn take() -> T {
         todo!()
     }
-    
+
     pub async fn get() -> Handle<T> {
         todo!()
     }
 }
 
 #[derive(Component, Clone, Debug, Deserialize, Serialize)]
-pub struct ReferenceRetrievalTask {
-    
-}
+pub struct ReferenceRetrievalTask {}
 
 impl Future for ReferenceRetrievalTask {
     type Output = Vec<u8>;
@@ -168,19 +162,19 @@ impl Future for ReferenceRetrievalTask {
 }
 
 pub struct Handle<T> {
-    _marker: PhantomData<T>
+    _marker: PhantomData<T>,
 }
 
 // TODO:
 // A trait is derivable for ECS components
-// The components must have a content hash, not the entity. For efficiency and ergonomics. This means that a hash of each relevant component must be stored in the Vanth component of the entity, in a `HashMap` or something. The ID of the component used by Vanth should be a method on the derived trait.
+// The components must have a content hash, not the entity. For efficiency and ergonomics. This means that a hash of
+// each relevant component must be stored in the Vanth component of the entity, in a `HashMap` or something. The ID of
+// the component used by Vanth should be a method on the derived trait.
 
 pub struct VanthPlugin;
 
 impl Plugin for VanthPlugin {
-    fn build(&self, app: &mut App) {
-        
-    }
+    fn build(&self, app: &mut App) {}
 }
 
 // fn run_reference_tasks(tasks: Query<(&ReferenceGetTask<>)>) {
@@ -188,6 +182,4 @@ impl Plugin for VanthPlugin {
 // }
 
 /// A world which Vanth entities live in. Lifetimes `'v` of [`Vanth<'v>`] types are tied to the lifetime of the `Root`.
-pub struct Root {
-    
-}
+pub struct Root {}

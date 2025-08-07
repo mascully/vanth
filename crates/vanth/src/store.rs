@@ -1,11 +1,11 @@
 use std::{collections::HashMap, marker::PhantomData, path::PathBuf};
 
-use rusqlite::{Connection, params, named_params};
+use rusqlite::{Connection, named_params, params};
 
 use bevy_ecs::prelude::*;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::{hash, ComponentContents, ContentHash, Ty, Vanth};
+use crate::{ComponentContents, ContentHash, Ty, Vanth, hash};
 
 #[derive(Debug)]
 pub struct Store {
@@ -22,7 +22,7 @@ pub enum Error {
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
-         Error::Serializiation(err.to_string())
+        Error::Serializiation(err.to_string())
     }
 }
 
@@ -48,13 +48,15 @@ impl Store {
     }
 
     pub fn get_from_hash<T: Vanth + DeserializeOwned>(&mut self, content_hash: ContentHash) -> Result<Option<T>> {
-        let Some(raw) = self.get_raw_from_hash::<T>(content_hash)? else { return Ok(None) };
+        let Some(raw) = self.get_from_hash_raw::<T>(content_hash)? else {
+            return Ok(None);
+        };
 
         let deserialized: T = serde_json::from_slice(&raw)?;
-                Ok(Some(deserialized))
+        Ok(Some(deserialized))
     }
 
-    pub fn get_raw_from_hash<T: Vanth>(&mut self, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
+    pub fn get_from_hash_raw<T: Vanth>(&mut self, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
         self.backend.get_from_hash(T::ty(), content_hash)
     }
 
@@ -144,9 +146,11 @@ impl Backend for Sqlite {
         let table_name = Self::table_name(&ty);
         let query = format!("SELECT content FROM \"{}\" WHERE content_hash = :hash", table_name);
 
-        match self.conn.query_row(&query, named_params! {":hash": content_hash.hash.as_slice()}, |row| {
-            row.get::<_, Vec<u8>>(0)
-        }) {
+        match self
+            .conn
+            .query_row(&query, named_params! {":hash": content_hash.hash.as_slice()}, |row| {
+                row.get::<_, Vec<u8>>(0)
+            }) {
             Ok(content) => Ok(Some(content)),
             Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
             Err(e) => Err(e.into()),
@@ -181,7 +185,10 @@ impl Backend for Sqlite {
             "INSERT OR REPLACE INTO \"{}\" (content_hash, content) VALUES (:hash, :content)",
             table_name
         );
-        self.conn.execute(&query, named_params! {":hash": content_hash.hash.as_slice(), ":content": content})?;
+        self.conn.execute(
+            &query,
+            named_params! {":hash": content_hash.hash.as_slice(), ":content": content},
+        )?;
         Ok(())
     }
 
@@ -189,7 +196,8 @@ impl Backend for Sqlite {
         self.ensure_table_exists(&ty)?;
         let table_name = Self::table_name(&ty);
         let query = format!("DELETE FROM \"{}\" WHERE content_hash = :hash", table_name);
-        self.conn.execute(&query, named_params! {":hash": content_hash.hash.as_slice()})?;
+        self.conn
+            .execute(&query, named_params! {":hash": content_hash.hash.as_slice()})?;
         Ok(())
     }
 
@@ -209,28 +217,20 @@ pub struct Memory {
 
 impl Memory {
     pub fn new() -> Self {
-        Self {
-            tables: HashMap::new(),
-        }
+        Self { tables: HashMap::new() }
     }
 }
 
 impl Backend for Memory {
     fn get_from_hash(&mut self, ty: Ty, content_hash: ContentHash) -> Result<Option<Vec<u8>>> {
-        Ok(self.tables
-            .get(&ty)
-            .and_then(|table| table.get(&content_hash))
-            .cloned())
+        Ok(self.tables.get(&ty).and_then(|table| table.get(&content_hash)).cloned())
     }
 
     fn get_all_of_ty(&mut self, ty: Ty) -> Result<Vec<(ContentHash, Vec<u8>)>> {
-        Ok(self.tables
+        Ok(self
+            .tables
             .get(&ty)
-            .map(|table| {
-                table.iter()
-                    .map(|(k, v)| (*k, v.clone()))
-                    .collect()
-            })
+            .map(|table| table.iter().map(|(k, v)| (*k, v.clone())).collect())
             .unwrap_or_else(Vec::new))
     }
 

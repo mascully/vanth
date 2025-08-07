@@ -1,5 +1,5 @@
-use rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
+use rand_core::{RngCore, SeedableRng};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 use vanth_derive::Vanth;
@@ -10,11 +10,15 @@ pub struct Rng {
 }
 
 pub fn rng_new() -> Rng {
-    Rng { inner: ChaCha8Rng::from_seed([0u8; 32]) }
+    Rng {
+        inner: ChaCha8Rng::from_seed([0u8; 32]),
+    }
 }
 
 pub fn rng_from_seed(seed: [u8; 32]) -> Rng {
-    Rng { inner: ChaCha8Rng::from_seed(seed) }
+    Rng {
+        inner: ChaCha8Rng::from_seed(seed),
+    }
 }
 
 pub fn rng_set_stream(rng: &mut Rng, stream: u64) {
@@ -82,7 +86,7 @@ impl From<f32> for Score {
 #[derive(Clone, Debug, Deserialize, Serialize, Vanth)]
 pub struct OptimizationResult {
     /// List of pairs of evaluation score and Rng used to generate the value.
-    pub values: Vec<(Rng, f32)>
+    pub values: Vec<(Rng, f32)>,
 }
 
 pub fn optimize<T: Varo>(evaluator: impl Fn(T) -> Score, rng: &mut Rng, rounds: u32) -> OptimizationResult {

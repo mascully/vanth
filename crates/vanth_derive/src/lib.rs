@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, GenericParam, Generics};
 use syn::parse_quote;
+use syn::{DeriveInput, GenericParam, Generics, parse_macro_input};
 
 #[proc_macro_derive(Vanth)]
 pub fn vanth_derive(input: TokenStream) -> TokenStream {
@@ -11,15 +11,19 @@ pub fn vanth_derive(input: TokenStream) -> TokenStream {
 
     let mut generics = input.generics.clone();
 
-    let type_params: Vec<syn::Ident> = generics.params.iter().filter_map(|param| {
-        if let GenericParam::Type(type_param) = param {
-            Some(type_param.ident.clone())
-        } else {
-            None
-        }
-    }).collect();
+    let type_params: Vec<syn::Ident> = generics
+        .params
+        .iter()
+        .filter_map(|param| {
+            if let GenericParam::Type(type_param) = param {
+                Some(type_param.ident.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
 
-    let mut where_clause = generics.where_clause.clone().unwrap_or_else(|| parse_quote!(where ));
+    let mut where_clause = generics.where_clause.clone().unwrap_or_else(|| parse_quote!(where));
     for tp in &type_params {
         where_clause.predicates.push(parse_quote!(#tp : vanth::Vanth));
     }

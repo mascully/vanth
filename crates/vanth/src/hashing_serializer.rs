@@ -4,11 +4,11 @@ use std::fmt;
 
 use digest::Update;
 use serde::{
+    Serialize, Serializer,
     ser::{
         self, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
         SerializeTupleStruct, SerializeTupleVariant,
     },
-    Serialize, Serializer,
 };
 
 use crate::ContentHash;
@@ -18,7 +18,9 @@ pub fn hash(value: &impl Serialize) -> ContentHash {
     let mut serializer = HashingSerializer { digest: &mut digest };
     // TODO: Don't unwrap.
     serializer.serialize_value(value).unwrap();
-    ContentHash { hash: *serializer.digest.finalize().as_bytes() }
+    ContentHash {
+        hash: *serializer.digest.finalize().as_bytes(),
+    }
 }
 
 /// A serializer that hashes the data instead of serializing it.
@@ -70,9 +72,7 @@ impl fmt::Display for Error {
 /// Converts the `usize` sequence length to a fixed length type,
 /// since we want the result to be portable.
 fn try_into_sequence_length(len: usize) -> Result<u128, Error> {
-    u128::try_from(len)
-        .ok()
-        .ok_or(Error::SequenceLengthTooLarge)
+    u128::try_from(len).ok().ok_or(Error::SequenceLengthTooLarge)
 }
 
 // Implement `serialize_$ty` for int types
@@ -189,14 +189,12 @@ impl<'a, T: Update> Serializer for HashingSerializer<'a, T> {
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
         let len = len.ok_or(Error::UndefinedSequenceLength)?;
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
@@ -205,8 +203,7 @@ impl<'a, T: Update> Serializer for HashingSerializer<'a, T> {
         _name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
@@ -218,25 +215,18 @@ impl<'a, T: Update> Serializer for HashingSerializer<'a, T> {
         len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         self.digest.update(&variant_index.to_be_bytes());
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
         let len = len.ok_or(Error::UndefinedSequenceLength)?;
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
-    fn serialize_struct(
-        self,
-        _name: &'static str,
-        len: usize,
-    ) -> Result<Self::SerializeStruct, Self::Error> {
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+    fn serialize_struct(self, _name: &'static str, len: usize) -> Result<Self::SerializeStruct, Self::Error> {
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
@@ -248,8 +238,7 @@ impl<'a, T: Update> Serializer for HashingSerializer<'a, T> {
         len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
         self.digest.update(&variant_index.to_be_bytes());
-        self.digest
-            .update(&try_into_sequence_length(len)?.to_be_bytes());
+        self.digest.update(&try_into_sequence_length(len)?.to_be_bytes());
         Ok(self)
     }
 
@@ -267,9 +256,7 @@ impl<'a, T: Update> SerializeSeq for HashingSerializer<'a, T> {
     type Error = Error;
 
     fn serialize_element<V: ?Sized + Serialize>(&mut self, value: &V) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -283,9 +270,7 @@ impl<'a, T: Update> SerializeTuple for HashingSerializer<'a, T> {
     type Error = Error;
 
     fn serialize_element<V: ?Sized + Serialize>(&mut self, value: &V) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -299,9 +284,7 @@ impl<'a, T: Update> SerializeTupleStruct for HashingSerializer<'a, T> {
     type Error = Error;
 
     fn serialize_field<V: ?Sized + Serialize>(&mut self, value: &V) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -315,9 +298,7 @@ impl<'a, T: Update> SerializeTupleVariant for HashingSerializer<'a, T> {
     type Error = Error;
 
     fn serialize_field<V: ?Sized + Serialize>(&mut self, value: &V) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -331,16 +312,12 @@ impl<'a, T: Update> SerializeMap for HashingSerializer<'a, T> {
     type Error = Error;
 
     fn serialize_key<K: ?Sized + Serialize>(&mut self, key: &K) -> Result<Self::Ok, Error> {
-        key.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        key.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
     fn serialize_value<V: ?Sized + Serialize>(&mut self, value: &V) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -353,14 +330,8 @@ impl<'a, T: Update> SerializeStruct for HashingSerializer<'a, T> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<V: ?Sized + Serialize>(
-        &mut self,
-        _key: &'static str,
-        value: &V,
-    ) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+    fn serialize_field<V: ?Sized + Serialize>(&mut self, _key: &'static str, value: &V) -> Result<Self::Ok, Error> {
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 
@@ -373,14 +344,8 @@ impl<'a, T: Update> SerializeStructVariant for HashingSerializer<'a, T> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<V: ?Sized + Serialize>(
-        &mut self,
-        _key: &'static str,
-        value: &V,
-    ) -> Result<Self::Ok, Error> {
-        value.serialize(HashingSerializer {
-            digest: self.digest,
-        })?;
+    fn serialize_field<V: ?Sized + Serialize>(&mut self, _key: &'static str, value: &V) -> Result<Self::Ok, Error> {
+        value.serialize(HashingSerializer { digest: self.digest })?;
         Ok(())
     }
 

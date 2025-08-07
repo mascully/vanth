@@ -122,13 +122,7 @@ impl<T: ?Sized> Hash for Id<T> {
 impl<T: ?Sized> Debug for Id<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (high, low) = self.to_u128_pair();
-        write!(
-            f,
-            "Id<{}>({:016x}{:016x})",
-            std::any::type_name::<T>(),
-            high,
-            low
-        )
+        write!(f, "Id<{}>({:016x}{:016x})", std::any::type_name::<T>(), high, low)
     }
 }
 
@@ -146,7 +140,9 @@ pub struct ContentHash {
 impl ContentHash {}
 
 pub trait Entity {
-    fn entity_id() -> Id<dyn Entity> where Self: Sized;
+    fn entity_id() -> Id<dyn Entity>
+    where
+        Self: Sized;
 }
 
 pub trait Component: Send + Sync + 'static {
