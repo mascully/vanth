@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tempfile::TempDir;
-use vanth::{Vanth, hash, store::Store};
+use vanth::{Vanth, hash, store::{Store, StoreParams}};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Vanth)]
 struct Foo {
@@ -17,7 +17,7 @@ struct Bar {
 fn test_sqlite_store() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("test.db");
-    let mut store = Store::sqlite_from_path(path.clone()).unwrap();
+    let mut store = Store::sqlite_from_path(path.clone(), StoreParams::default()).unwrap();
 
     let foo_1 = Foo { inner: 1 };
     let foo_2 = Foo { inner: 2 };

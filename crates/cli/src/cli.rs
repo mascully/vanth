@@ -1,9 +1,13 @@
 use clap::{Args, Parser, Subcommand};
+use tracing::trace;
 use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process;
-use vanth::{ContentHash, store::Store, Ty};
 use vanth::hash as vanth_hash;
+use vanth::{
+    ContentHash, Ty,
+    store::{Store, StoreParams},
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "vanth")]
@@ -104,7 +108,7 @@ fn parse_hash(s: &str) -> ContentHash {
 }
 
 fn handle_write(args: &WriteArgs) {
-    let mut store = Store::sqlite_from_path(args.db.clone()).unwrap_or_else(|e| {
+    let mut store = Store::sqlite_from_path(args.db.clone(), StoreParams::default()).unwrap_or_else(|e| {
         eprintln!("Error opening store: {:?}", e);
         process::exit(1);
     });
@@ -119,6 +123,8 @@ fn handle_write(args: &WriteArgs) {
             process::exit(1);
         });
     }
+    
+    trace!("Received JSON content: {}", content);
 
     let value: serde_json::Value = serde_json::from_str(&content).unwrap_or_else(|e| {
         eprintln!("Invalid JSON: {}", e);
@@ -134,7 +140,14 @@ fn handle_write(args: &WriteArgs) {
 }
 
 fn handle_get(args: &GetArgs) {
-    let mut store = Store::sqlite_from_path(args.db.clone()).unwrap_or_else(|e| {
+    let mut store = Store::sqlite_from_path(
+        args.db.clone(),
+        StoreParams {
+            create_if_not_exists: false,
+            ..Default::default()
+        },
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Error opening store: {:?}", e);
         process::exit(1);
     });
@@ -160,7 +173,14 @@ fn handle_get(args: &GetArgs) {
 }
 
 fn handle_get_all(args: &GetAllArgs) {
-    let mut store = Store::sqlite_from_path(args.db.clone()).unwrap_or_else(|e| {
+    let mut store = Store::sqlite_from_path(
+        args.db.clone(),
+        StoreParams {
+            create_if_not_exists: false,
+            ..Default::default()
+        },
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Error opening store: {:?}", e);
         process::exit(1);
     });
@@ -180,7 +200,14 @@ fn handle_get_all(args: &GetAllArgs) {
 }
 
 fn handle_delete(args: &DeleteArgs) {
-    let mut store = Store::sqlite_from_path(args.db.clone()).unwrap_or_else(|e| {
+    let mut store = Store::sqlite_from_path(
+        args.db.clone(),
+        StoreParams {
+            create_if_not_exists: false,
+            ..Default::default()
+        },
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Error opening store: {:?}", e);
         process::exit(1);
     });
@@ -188,7 +215,14 @@ fn handle_delete(args: &DeleteArgs) {
 }
 
 fn handle_delete_all(args: &DeleteAllArgs) {
-    let mut store = Store::sqlite_from_path(args.db.clone()).unwrap_or_else(|e| {
+    let mut store = Store::sqlite_from_path(
+        args.db.clone(),
+        StoreParams {
+            create_if_not_exists: false,
+            ..Default::default()
+        },
+    )
+    .unwrap_or_else(|e| {
         eprintln!("Error opening store: {:?}", e);
         process::exit(1);
     });

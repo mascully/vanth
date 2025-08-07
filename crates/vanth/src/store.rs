@@ -58,10 +58,27 @@ impl Default for StoreParams {
 
 impl Store {
     /// Use an SQLite backend with a database file at the provided path.
-    // TODO: Params
-    pub fn sqlite_from_path(path: PathBuf) -> Result<Self> {
+    pub fn sqlite_from_path(path: PathBuf, params: StoreParams) -> Result<Self> {
+        use rusqlite::OpenFlags;
+        // Base flags for URI handling and disabling mutexes.
+        let mut flags = OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+
+        // Read‑only takes precedence over read‑write.
+        if params.read_only {
+            flags |= OpenFlags::SQLITE_OPEN_READ_ONLY;
+        } else {
+            flags |= OpenFlags::SQLITE_OPEN_READ_WRITE;
+        }
+
+        // Create the file if allowed.
+        if params.create_if_not_exists {
+            flags |= OpenFlags::SQLITE_OPEN_CREATE;
+        }
+
+        // Open the SQLite connection with the computed flags.
+        let connection = rusqlite::Connection::open_with_flags(path, flags)?;
         Ok(Self {
-            backend: Box::new(Sqlite::new(path)?),
+            backend: Box::new(Sqlite { connection }),
         })
     }
 
@@ -154,6 +171,7 @@ pub struct Sqlite {
 }
 
 impl Sqlite {
+    // TODO: Use this instead of directly constructing the connection in `Store`.
     pub fn new(path: PathBuf) -> Result<Self> {
         use rusqlite::OpenFlags;
         // Remove the `SQLITE_OPEN_CREATE` flag because we do not want to create databases if they don't exist.
