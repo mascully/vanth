@@ -127,6 +127,12 @@ pub struct ContentHash {
     pub hash: [u8; 32],
 }
 
+impl ContentHash {
+    pub fn hex(&self) -> String {
+        self.hash.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Component, Serialize)]
 pub struct Reference<T: Clone + Serialize> {
     value: ReferenceValue,

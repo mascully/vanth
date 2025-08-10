@@ -152,7 +152,7 @@ pub struct Cache {
     // backend: Backend,
 }
 
-pub trait Backend: std::fmt::Debug {
+pub trait Backend: std::fmt::Debug + Send {
     fn get_from_hash(&mut self, ty: Ty, content_hash: ContentHash) -> Result<Option<Vec<u8>>>;
 
     fn get_all_of_ty(&mut self, ty: Ty) -> Result<Vec<(ContentHash, Vec<u8>)>>;
@@ -208,8 +208,6 @@ impl Backend for Sqlite {
         let table_name = Self::table_name(&ty);
         let query = format!("SELECT content_hash, content FROM \"{}\"", table_name);
 
-        trace!("Reading table {}", table_name);
-
         let mut statement = match transaction.prepare(&query).map_err(Into::into) {
             Err(Error::SqliteTableDoesNotExist { .. }) => return Ok(Vec::new()),
             other => other?,
@@ -229,9 +227,9 @@ impl Backend for Sqlite {
         }
 
         drop(statement);
-
         transaction.commit()?;
-        Ok(Vec::new())
+        
+        Ok(results)
     }
 
     fn write(&mut self, ty: Ty, content_hash: ContentHash, content: Vec<u8>) -> Result<()> {

@@ -137,6 +137,8 @@ fn handle_write(args: &WriteArgs) {
         eprintln!("Error writing to store: {:?}", e);
         process::exit(1);
     });
+    
+    println!("{}", content_hash.hex());
 }
 
 fn handle_get(args: &GetArgs) {
