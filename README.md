@@ -25,9 +25,9 @@ struct Data {
 }
 ```
 
-This generates a method `Vanth::ty()` which returns a `vanth::Ty`. This should represent the type's fully qualified name - its module path followed by the type itself and any generics it has. E.g. `Data::<ty().to_string()` could return `my::crate::module::Data`.
+This generates a method `Vanth::ty()` which returns a `vanth::Ty`. This should represent the type's fully qualified name - its module path followed by the type itself and any generics it has. E.g. `Data::ty().to_string()` could return `"my::crate::module::Data"`.
 
-The derivation only works for basic types right now and is not implemented for `std` types. Moving or renaming types or modules will change the type name, necessitating a database migration. This is not supported yet.
+The derive macro only works for basic types right now and is not implemented for `std` types. Moving or renaming types or modules will change the type name, necessitating a database migration. This is not supported yet.
 
 This should be used with caution. There are good reasons why `std::any::TypeId` is opaque.
 
@@ -47,9 +47,9 @@ let my_data: Data = store.get_from_hash(hash).unwrap();
 
 ## CLI usage
 
-You can run the Vanth CLI with Nix using `nix run https://git.mascully.com/mascully/vanth`.
+You can run the Vanth CLI with Nix using `nix run git+https://git.mascully.com/mascully/vanth.git`.
 
-Use `--` to pass arguments, e.g. `nix run https://git.mascully.com/mascully/vanth -- --help`.
+Use `--` to pass arguments, e.g. `nix run git+https://git.mascully.com/mascully/vanth.git -- --help`.
 
 ### Syntax
 
