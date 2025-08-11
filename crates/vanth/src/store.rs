@@ -115,10 +115,11 @@ impl Store {
         Ok(results)
     }
 
-    pub fn write<T: Vanth + Serialize>(&mut self, value: &T) -> Result<()> {
+    pub fn write<T: Vanth + Serialize>(&mut self, value: &T) -> Result<ContentHash> {
         let content_hash = hash(&value);
         let data = serde_json::to_vec(&value)?;
-        self.backend.write(T::ty(), content_hash, data)
+        self.backend.write(T::ty(), content_hash, data)?;
+        Ok(content_hash)
     }
 
     pub fn write_raw(&mut self, ty: Ty, content_hash: ContentHash, content: Vec<u8>) -> Result<()> {

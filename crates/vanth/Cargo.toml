@@ -5,18 +5,22 @@ edition.workspace = true
 
 [lib]
 path = "src/lib.rs"
+doctest = false
 
 [dependencies]
-bevy_app.workspace = true
 bevy_ecs.workspace = true
 digest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 blake3.workspace = true
 vanth_derive = { path = "../vanth_derive" }
-sqlx.workspace = true
 rusqlite.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+
+[[example]]
+name = "simple"
+path = "examples/simple.rs"

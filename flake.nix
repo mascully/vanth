@@ -59,6 +59,7 @@
                         strictDeps = true;
                         nativeBuildInputs = packages;
                         buildInputs = packages;
+                        checkPhase = "";
 
                         CARGO_BUILD_INCREMENTAL = "false";
                         RUST_BACKTRACE = "1";

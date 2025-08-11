@@ -1,0 +1,6 @@
+[package]
+name = "vanth_meta"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

@@ -1,7 +1,7 @@
+#![doc = include_str!("../../../README.md")]
+
 use std::marker::PhantomData;
 
-/// Library crate for the `vanth` ECS-based database node.
-use bevy_app::{App, Plugin};
 use bevy_ecs::{prelude::*, query::QueryData};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
@@ -20,27 +20,23 @@ pub enum Error {
     Other(String),
 }
 
-/// A server node wrapping a Bevy App without running it.
+/// A Vanth server.
 pub struct Node {
-    app: App,
+    
 }
 
 impl Node {
-    /// Creates a new server node with an empty Bevy App.
     pub fn new() -> Self {
-        let app = App::new();
-        Node { app }
+        Self {  }
     }
 
-    /// Returns the number of entities currently in the world.
     pub fn entity_count(&self) -> usize {
         todo!()
-        // Query for no components returns one item per entity.
-        // self.app.world().entities().len()
     }
 
-    // TODO
-    pub fn run() {}
+    pub fn run() {
+        todo!()
+    }
 
     pub fn save(entity_id: impl Into<EntityId>) -> Result<()> {
         // TODO
@@ -171,17 +167,6 @@ pub struct Handle<T> {
     _marker: PhantomData<T>,
 }
 
-// TODO:
-// A trait is derivable for ECS components
-// The components must have a content hash, not the entity. For efficiency and ergonomics. This means that a hash of
-// each relevant component must be stored in the Vanth component of the entity, in a `HashMap` or something. The ID of
-// the component used by Vanth should be a method on the derived trait.
-
-pub struct VanthPlugin;
-
-impl Plugin for VanthPlugin {
-    fn build(&self, app: &mut App) {}
-}
 
 // fn run_reference_tasks(tasks: Query<(&ReferenceGetTask<>)>) {
 
