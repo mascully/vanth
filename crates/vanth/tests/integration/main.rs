@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use vanth::{Component, Node, Reference};
+use vanth::{Node, Reference};
 
 mod derive;
 mod fs;

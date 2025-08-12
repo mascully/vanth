@@ -11,8 +11,11 @@ use serde::{
     },
 };
 
-use crate::ContentHash;
+use crate::{ContentHash, Ty};
 
+/// Returns the [`ContentHash`] of any type implementing [`Serialize`].
+///
+/// The type name itself is not included in the hash, and so two values with different types may produce the same hash. /// Use a combination of [`Ty`] and [`ContentHash`] to uniquely identify values.
 pub fn hash(value: &impl Serialize) -> ContentHash {
     let mut digest = blake3::Hasher::new();
     let mut serializer = HashingSerializer { digest: &mut digest };

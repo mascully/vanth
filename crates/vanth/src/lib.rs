@@ -1,5 +1,3 @@
-#![doc = include_str!("../../../README.md")]
-
 use std::marker::PhantomData;
 
 use bevy_ecs::{prelude::*, query::QueryData};
@@ -9,6 +7,7 @@ use crate::entity::EntityId;
 
 pub mod entity;
 pub mod hashing_serializer;
+pub mod nix;
 pub mod store;
 
 pub use hashing_serializer::hash;
@@ -20,14 +19,20 @@ pub enum Error {
     Other(String),
 }
 
+
+/// A view of all of the [`Node`]s in a cluster.
+pub struct Network {
+    // TODO
+}
+
 /// A Vanth server.
 pub struct Node {
-    
+    // TODO
 }
 
 impl Node {
     pub fn new() -> Self {
-        Self {  }
+        Self {}
     }
 
     pub fn entity_count(&self) -> usize {
@@ -70,6 +75,8 @@ pub struct Value {
     data: Vec<u8>,
 }
 
+/// A wrapper for the fully-qualified name of a Rust type. This should be univerisally unique for a given type within a
+/// given project.
 #[derive(Clone, Debug, Deserialize, Serialize, Eq, Hash)]
 pub struct Ty {
     pub path: Vec<String>,
@@ -93,9 +100,18 @@ impl<T: AsRef<str>> PartialEq<T> for Ty {
     }
 }
 
+/// All types stored in the Vanth database should implement this trait.
 pub trait Vanth {
+    /// Get the [`Ty`] representing this type.
     fn ty() -> Ty;
 }
+
+macro_rules! impl_vanth {
+    // TODO
+    () => {};
+}
+
+// impl_vanth!(std::string::String)
 
 // TODO: Impl for different tuple sizes
 pub trait VanthTuple {}
@@ -112,12 +128,11 @@ pub struct ComponentContents<T: Vanth> {
     _marker: PhantomData<T>,
 }
 
-pub trait Component: Serialize {
-    fn id() -> String;
-}
-
 // use a macro to implement VanthTuiple here.
 
+/// A 32 byte BLAKE3 hash representing the contents of some value.
+///
+/// This can be generated with the [`hash`] function.
 #[derive(Copy, Clone, Debug, Deserialize, Component, Serialize, PartialEq, Eq, Hash)]
 pub struct ContentHash {
     pub hash: [u8; 32],
@@ -166,11 +181,6 @@ impl Future for ReferenceRetrievalTask {
 pub struct Handle<T> {
     _marker: PhantomData<T>,
 }
-
-
-// fn run_reference_tasks(tasks: Query<(&ReferenceGetTask<>)>) {
-
-// }
 
 /// A world which Vanth entities live in. Lifetimes `'v` of [`Vanth<'v>`] types are tied to the lifetime of the `Root`.
 pub struct Root {}
