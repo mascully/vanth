@@ -3,12 +3,12 @@
         nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
         crane.url = "github:ipetkov/crane";
         flake-parts.url = "github:hercules-ci/flake-parts";
-        fenix.url = "github:nix-community/fenix";
+        rust-overlay.url = "github:oxalica/rust-overlay";
     };
 
     outputs =
-        inputs@{ flake-parts, ... }:
-        flake-parts.lib.mkFlake { inherit inputs; } {
+        inputs:
+        inputs.flake-parts.lib.mkFlake { inherit inputs; } {
             systems = [
                 "aarch64-linux"
                 "aarch64-darwin"
@@ -17,19 +17,13 @@
             ];
 
             perSystem =
-                { pkgs, system, ... }:
+                { system, ... }:
                 let
-                    rustToolchain = inputs.fenix.packages.${system}.combine ([
-                        (inputs.fenix.packages.${system}.complete.withComponents [
-                            "cargo"
-                            "clippy"
-                            "rust-src"
-                            "rustc"
-                            "rustfmt"
-                        ])
-                        inputs.fenix.packages.${system}.complete.rust-analyzer
-                        inputs.fenix.packages.${system}.targets.wasm32-unknown-unknown.latest.rust-std
-                    ]);
+                    pkgs = import inputs.nixpkgs {
+                        inherit system;
+                        overlays = [ inputs.rust-overlay.overlays.default ];
+                    };
+                    rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
                     craneLib = (inputs.crane.mkLib pkgs).overrideToolchain rustToolchain;
 
                     packages =
@@ -110,7 +104,6 @@
                     devShells.default = craneLib.devShell {
                         inputsFrom = [ vanth ];
                         packages = packages;
-                        RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
                         LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath packages;
                     };
                 };
